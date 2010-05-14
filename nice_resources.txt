@@ -1,0 +1,7 @@
+This file have some nice resources that I want to use and maybe extend in this blog engine.
+
+jQuery DataTables (data griding): http://www.datatables.net/
+translatiosn app: http://github.com/jbalogh/zamboni/tree/master/apps/translations
+
+django-taggit: http://github.com/alex/django-taggit/network
+
