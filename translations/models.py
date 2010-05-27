@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import  ugettext as _
 
 class Languages(models.Model):
     """
@@ -10,3 +11,7 @@ class Languages(models.Model):
 
     def __unicode__(self):
         return "%s ( %s / %s )" % (self.label,self.code,self.locale)
+
+    class Meta:
+        verbose_name = _(u"Languages")
+        verbose_name_plural = _(u"Languages")
