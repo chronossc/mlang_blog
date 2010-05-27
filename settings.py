@@ -93,4 +93,8 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'mlang_blog.translations',
     'mlang_blog.webui',
+
+
+
+    'south',
 )
