@@ -51,7 +51,6 @@ class LanguagesManager(models.Manager):
     def get_languages_tuple(self):
         return self.get_query_set().get_languages_tuple()
 
-
 class Languages(models.Model):
     """
     Language codes, code is based on django.conf.global_settings.LANGUAGES
@@ -110,6 +109,10 @@ class Languages(models.Model):
         verbose_name = _(u"Languages")
         verbose_name_plural = _(u"Languages")
 
+# These Translation* classes are slightly based on Rafal Jońca code
+# (http://1l.to/be9) and django-pluggable-model-i18n (http://1l.to/c11)
+#
+# The idea is to provide a extensible Model to use in translatable models.
 class TranslationModelManager(models.Manager):
 
     def set_lang(self,lang=None):
