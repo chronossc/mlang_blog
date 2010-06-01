@@ -1,23 +1,31 @@
-"""
-This file demonstrates two different styles of tests (one doctest and one
-unittest). These will both pass when you run "manage.py test".
 
-Replace these with more appropriate tests for your application.
-"""
+
+import sys,os
+
+import ipdb
+ipdb.set_trace()
+
+
 
 from django.test import TestCase
+from webui.models import Post
+from django.contrib.webdesign import lorem_ipsum
+from django.contrib.auth.models import User
+from random import choice
 
 class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.failUnlessEqual(1 + 1, 2)
 
-__test__ = {"doctest": """
-Another way to test that 1 + 1 is equal to 2.
+    def test_new_post(self):
 
->>> 1 + 1 == 2
-True
-"""}
+        dct = dict(
+            author = choice(User.objects.filter(is_active=True)),
+            content = '\n'.join(lorem_ipsum.paragraphs(randint(10,20))),
+            title = 'teste 1'
+        )
+
+        p = Post(**dct)
+
+        p.save()
+
+
 
