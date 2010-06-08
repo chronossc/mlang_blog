@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from django.conf import settings
 from django.conf import global_settings
@@ -113,18 +114,87 @@ class Languages(models.Model):
 # (http://1l.to/be9) and django-pluggable-model-i18n (http://1l.to/c11)
 #
 # The idea is to provide a extensible Model to use in translatable models.
+class TranslationQuerySet(QuerySet):
+    pass
+
 class TranslationModelManager(models.Manager):
 
-    def set_lang(self,lang=None):
-        if not lang:
-            lang = translation.get_language()
-        return self.get_query_set().filter(lang=Languages.get_lang(lang))
+    def get_query_set(self):
+        """
+        Just use TranslationQuerySet for some future customization, just
+        self.get_query_set().select_related('self') works here :)
+        """
+        return TranslationQuerySet(self.model,using=self._db).select_related('self')
 
+    def get_lang(self,langs=None):
+        """
+        Filter translated objects in given language(s)
+        """
+        # transform in one list with current language to use as default language
+        # note that if is same language of your object, it don't return
+        # anything (in instance.translations.get_lang() if both are same lang)
+        if not langs:
+            langs = translation.get_language()
+
+        if not getattr(langs,'__iter__',False):
+            langs = [langs]
+
+        # we set real langs because if not have 'en-us' in db, we return 'en',
+        # if user search for 'en-us'
+        real_langs = set()
+        try:
+            # setup de languages cache
+            if not hasattr(self,'_languages_cache',):
+                self._languages_cache = Languages.objects.all()
+
+            for lang in langs:
+                # if not exists let DoesNotExist error follow your way
+                lang = self._languages_cache.get_lang(lang)
+                real_langs.add(lang.language)
+
+        except Languages.DoesNotExist:
+            raise self.model.DoesNotExist,u"This language aren't found in database."
+
+        # if any problem occurred, filter by lang ids 
+        return self.get_query_set().filter(lang__in=real_langs)
+
+    def dummy(self):
+        pass
+
+
+import django.db.models.options as modelbaseoptions
+modelbaseoptions.DEFAULT_NAMES = modelbaseoptions.DEFAULT_NAMES + ('translation_fields',)
 
 class TranslationModel(models.Model):
 
     source = models.ForeignKey('self',related_name='translations',null=True,blank=True)
-    lang = models.ForeignKey(Languages,to_field='language',default=settings.LANGUAGE_CODE)
+    lang = models.ForeignKey('Languages',to_field='language',default=lambda:Languages.objects.get_lang(settings.LANGUAGE_CODE))
+
+    objects = TranslationModelManager()
 
     class Meta:
         abstract = True
+        translation_fields = tuple() # TODO: what about a better name for this option? this fields are auto-filled in new instances
+
+    def __unicode__(self):
+        raise NotImplementedError,u"You need to implement __unicode__ in %s.models.%s." % ( self._meta.app_label,self._meta.object_name )
+
+    def get_translations(self,langs=None):
+        """
+        Return translations of this object to given lang(s) or all of them
+        """
+        if langs:
+            return self.source.translations.get_lang(langs)
+        else:
+            return self.source.translations.all()
+
+    def add_translation(self,lang,**kwargs):
+        """
+        Return a instance of this model with sent lang and fill all kwargs
+        """
+        # TODO: next is use self._meta.translation_fields to auto-fill some
+        # fields from source instance, but user still having chance of
+        # overwrite it with kwargs
+        lang = Languages.objects.get_lang(lang)
+        newinstance = self.__class__(lang=lang,**kwargs)
+        return newinstance

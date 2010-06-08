@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from django.contrib.auth.models import User
-from translations.models import TranslationModel
+
+from django.template.defaultfilters import slugify
 from django.utils.translation import  ugettext as _
+from django.utils.text import truncate_words
+
+from translations.models import TranslationModel
+from translations.utils import get_lang
 
 #class BObjectType(models.Model):
 #    """
@@ -38,17 +44,22 @@ from django.utils.translation import  ugettext as _
 
 class Post(TranslationModel):
     title = models.CharField(max_length=250)
-    slug = models.CharField(max_length=250,blank=True)
+    slug = models.SlugField(max_length=250,blank=True)
     author = models.ForeignKey(User)
     resume = models.TextField(blank=True)
     content = models.TextField()
 
-    def save(self,force_insert=False,force_update=False):
+    class Meta:
+        translation_fields = ('slug',)
 
-        import ipdb
-        ipdb.set_trace()
+    def __unicode__(self):
+        return u"<%s> %s" % (self.lang_id,truncate_words(self.title,8))
+
+    def save(self,*args,**kwargs):
+        # TODO: fill slug using same slug for all translations (so
+        # self.source.slug or slugfy(self.title) ... )
+        super(Post,self).save(*args,**kwargs)
 
 
-        super(Post,self).save(force_insert=force_insert,force_update=force_update)
 
 

@@ -1,11 +1,4 @@
-
-
 import sys,os
-
-import ipdb
-ipdb.set_trace()
-
-
 
 from django.test import TestCase
 from webui.models import Post
