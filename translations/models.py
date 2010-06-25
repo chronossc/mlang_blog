@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+
 from django.db import models
 from django.conf import settings
 from django.conf import global_settings
 from django.utils.translation import  ugettext as _
 from django.utils import translation
 from django.db.models.query import QuerySet
+
+
+
 
 class LanguagesQuerySet(QuerySet):
 
@@ -41,7 +45,7 @@ class LanguagesQuerySet(QuerySet):
         def get_tuple(obj):
             return obj.language,obj.get_language_display()
         return tuple(map(get_tuple,self.order_by('language')))
-
+    
 class LanguagesManager(models.Manager):
     def get_query_set(self):
         return LanguagesQuerySet(self.model, using=self._db)
@@ -106,6 +110,20 @@ class Languages(models.Model):
         return translation.to_locale(self.language)
     locale = property(to_locale)
 
+    def get_flag(self,size=None):
+        """
+        Return flag using self.language.split('-')[1:], but this was WRONG!
+        The right way is use a dict that links codes from ISO-3366-1
+        (http://en.wikipedia.org/wiki/ISO_3166-1) to self.language (language
+        lang code), so we need to provide methods that do the job on model too.
+        """
+        from translations.utils import get_flag
+        if size:
+            return get_flag(self,size)
+        else:
+            return get_flag(self)
+    get_flag.allow_tags = True
+
     class Meta:
         verbose_name = _(u"Languages")
         verbose_name_plural = _(u"Languages")
@@ -163,38 +181,91 @@ class TranslationModelManager(models.Manager):
 
 
 import django.db.models.options as modelbaseoptions
-modelbaseoptions.DEFAULT_NAMES = modelbaseoptions.DEFAULT_NAMES + ('translation_fields',)
+modelbaseoptions.DEFAULT_NAMES = modelbaseoptions.DEFAULT_NAMES + ('cloneable_fields',)
 
 class TranslationModel(models.Model):
 
     source = models.ForeignKey('self',related_name='translations',null=True,blank=True)
     lang = models.ForeignKey('Languages',to_field='language',default=lambda:Languages.objects.get_lang(settings.LANGUAGE_CODE))
+    tree = models.CharField(max_length=11,editable=False)
 
     objects = TranslationModelManager()
 
+    __UNCLONEABLE_FIELDS = ('lang','id','tree')
+
     class Meta:
         abstract = True
-        translation_fields = tuple() # TODO: what about a better name for this option? this fields are auto-filled in new instances
+        cloneable_fields = tuple()
 
     def __unicode__(self):
         raise NotImplementedError,u"You need to implement __unicode__ in %s.models.%s." % ( self._meta.app_label,self._meta.object_name )
+
+    def _getCloneableFields(self):
+        """
+        Check if cloneable fields are in UNCLONEABLE_FIELDS, raise ValueError
+        if in, return cloneable fields or False if no cloneable fields are set
+        """
+
+        _in = lambda k: k in self.__UNCLONEABLE_FIELDS
+
+        if any(map(_in,self._meta.cloneable_fields)):
+            raise ValueError,"Meta cloneable_fields doesn't accept %s fields. "\
+                "Fix this to continue." % (
+                    ' and '.join([
+                        ', '.join(self.__UNCLONEABLE_FIELDS[:-1]),
+                        self.__UNCLONEABLE_FIELDS[-1]
+                    ]))
+
+        return self._meta.cloneable_fields or False # [f1,f2,...] or False
+
+    def clean(self):
+
+        # clone fields ...
+        if self.source:
+            for f in self._getCloneableFields():
+                setattr(self,f,getattr(self.source,f))
 
     def get_translations(self,langs=None):
         """
         Return translations of this object to given lang(s) or all of them
         """
-        if langs:
+        if langs and self.source:
             return self.source.translations.get_lang(langs)
-        else:
+        elif langs and not self.source:
+            return self.translations.get_lang(langs)
+        elif not langs and self.source:
             return self.source.translations.all()
+        elif not langs and not self.source:
+            return self.translations.all()
+        else:
+            raise ValueError,"Something that can't happen happened :P"
 
     def add_translation(self,lang,**kwargs):
         """
-        Return a instance of this model with sent lang and fill all kwargs
+        Return a instance of this model with sent lang and fill fields in
+        cloneable_fields meta option.
         """
-        # TODO: next is use self._meta.translation_fields to auto-fill some
-        # fields from source instance, but user still having chance of
-        # overwrite it with kwargs
+        # args
         lang = Languages.objects.get_lang(lang)
+
+        # we create a new instance of this object with kwargs to update
+        # 'cloned' fields after and than save.
         newinstance = self.__class__(lang=lang,**kwargs)
+
+        # the save calls newinstance.full_clean(), that calls self.clean() that
+        # clone fields from source
+        # We let raise any ValidationError
+        newinstance.save()
         return newinstance
+
+    def get_flag(self,size=None):
+        return self.lang.get_flag(size)
+    get_flag.allow_tags = True
+
+    def save(self,*args,**kwargs):
+        self.full_clean()
+        super(TranslationModel,self).save(*args,**kwargs)
+        # fix self.tree
+        self.tree = "%s.%s" % (self.source_id or self.id,1 if self.source_id else 0)
+        super(TranslationModel,self).save(*args,**kwargs)
+        

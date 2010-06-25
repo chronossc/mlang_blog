@@ -1,4 +1,6 @@
 # Django settings for mlang_blog project.
+import os
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -31,7 +33,12 @@ TIME_ZONE = 'America/Chicago'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en'
+_ = lambda s: s
+LANGUAGES = (
+    ('en',_('English')),
+    ('pt-br',_('Brazilian Portuguese'))
+)
 
 SITE_ID = 1
 
@@ -45,17 +52,19 @@ USE_L10N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
+MEDIA_ROOT = os.path.abspath(os.path.join(PROJECT_ROOT,'media'))+'/'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = '/media/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+import django
+ADMIN_MEDIA_ROOT = os.path.join(os.path.dirname(django.__file__),'contrib','admin','media')+'/'
+ADMIN_MEDIA_PREFIX = '/media/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'ttdmf$4dibdxhy^_t_!zi#2v_d3n11+_@^4vka2=9e$tfgwxb-'
@@ -96,5 +105,5 @@ INSTALLED_APPS = (
 
 
 
-    'south',
+    #'south',
 )
