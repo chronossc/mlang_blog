@@ -62,9 +62,13 @@ MEDIA_URL = '/media/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-import django
-ADMIN_MEDIA_ROOT = os.path.join(os.path.dirname(django.__file__),'contrib','admin','media')+'/'
+#import django
+#ADMIN_MEDIA_ROOT = os.path.join(os.path.dirname(django.__file__),'contrib','admin','media')+'/'
+#import grappelli
+#ADMIN_MEDIA_ROOT = os.path.join(os.path.dirname(grappelli.__file__),'media')+'/'
 ADMIN_MEDIA_PREFIX = '/media/admin/'
+#print "ADMIN_MEDIA_ROOT: ",ADMIN_MEDIA_ROOT
+print "ADMIN_MEDIA_PREFIX: ",ADMIN_MEDIA_PREFIX
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'ttdmf$4dibdxhy^_t_!zi#2v_d3n11+_@^4vka2=9e$tfgwxb-'
@@ -74,6 +78,11 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
 #     'django.template.loaders.eggs.Loader',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.core.context_processors.auth",
+    "django.core.context_processors.request",
 )
 
 MIDDLEWARE_CLASSES = (
@@ -99,6 +108,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     # Uncomment the next line to enable the admin:
+    #'tinymce',
+    'grappelli',
     'django.contrib.admin',
     'mlang_blog.translations',
     'mlang_blog.webui',

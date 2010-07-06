@@ -2,6 +2,7 @@
 
 import datetime
 import re
+import grappelli
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -37,7 +38,8 @@ MARKUP_HELP = _("""Select the type of markup you are using in this article.
 <li><a href="http://daringfireball.net/projects/markdown/basics" target="_blank">Markdown Guide</a></li>
 <li><a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html" target="_blank">ReStructured Text Guide</a></li>
 <li><a href="http://thresholdstate.com/articles/4312/the-textile-reference-manual" target="_blank">Textile Guide</a></li>
-</ul>""")
+</ul>
+""")
 # regex used to find links in an article
 LINK_RE = re.compile('<a.*?href="(.*?)".*?>(.*?)</a>', re.I|re.M)
 TITLE_RE = re.compile('<title>(.*?)</title>', re.I|re.M)
@@ -187,8 +189,10 @@ class Article(TranslationModel):
             return self.title
     gettitle.short_description = u"Title"
     gettitle.allow_tags = True
+    gettitle.admin_order_field = 'title'
     
     #@models.permalink
     def get_absolute_url(self):
         return '/%s/' % self.slug
     get_absolute_url.short_description = u"URL"
+    get_absolute_url.admin_order_field = 'slug'

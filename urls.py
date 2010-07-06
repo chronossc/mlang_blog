@@ -14,9 +14,13 @@ urlpatterns = patterns('',
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
+    (r'^tinymce/', include('tinymce.urls')),
+    (r'^grappelli/', include('grappelli.urls')),
     (r'^admin/', include(admin.site.urls)),
-    (r'^media/admin/(?P<path>.*)$', 'django.views.static.serve', {
-        'document_root': settings.ADMIN_MEDIA_ROOT}),
+    #(r'^media/admin/(?P<path>.*)$', 'django.views.static.serve', {
+    #     'document_root': settings.ADMIN_MEDIA_ROOT,
+    #     'show_indexes': True}),
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', {
-        'document_root': settings.MEDIA_ROOT}),
+        'document_root': settings.MEDIA_ROOT,
+        'show_indexes': True}),
 )
